@@ -21,7 +21,6 @@ except:
 
 from datasets import load_dataset # hugging face datasets
 
-import gensim.parsing.preprocessing as gsp
 import gensim.corpora as corpora
 from gensim import utils
 from gensim.models.coherencemodel import CoherenceModel
@@ -41,6 +40,8 @@ STOP_WORDS = nltk.corpus.stopwords.words('english')
 def _get_word_reln_pairs(doc: any) -> list[tuple]:
     '''Loop through sentences and words in sentences to get dependency relationships'''
     
+
+    # add gov or dep based on head
     word_reln_pairs = [
         (word.text, word.deprel) 
         for sent in doc.sentences 
@@ -86,7 +87,7 @@ def coherence_optimization(tokens: list[any], id2word: dict, corpus: list[any], 
         model_list -> list[LdaMallet]
         coherence_values -> list[float]
     '''
-    
+
     model_list, coherence_values = [], []
     for n_topics in tqdm(topics_range):
         model = LdaMallet(os.environ['MALLET_DIR'], corpus=corpus, num_topics=n_topics, id2word=id2word)
@@ -109,6 +110,7 @@ def get_tokens(text: str) -> list[str]:
 
 def get_topics(model: any, n_topics: int) -> dict:
     '''Returns dictionary of topics'''
+    
     topics_dict = dict(model.print_topics(num_topics=n_topics))
     topics_dict = {int(k):v for k,v in topics_dict.items()}
     
@@ -116,7 +118,7 @@ def get_topics(model: any, n_topics: int) -> dict:
 
 def get_doc_top_matrix(model: any, n_topics: int) -> list[any]:
     '''Sort document topic matrix and add probability of 0 for topics that aren't included in documents'''
-    
+
     doc_top_matrix = [*model.load_document_topics()]
     
     new_doc_top_matrix = []
@@ -135,11 +137,11 @@ def get_doc_top_matrix(model: any, n_topics: int) -> list[any]:
 def main():
     # load dataset
     # [TODO]: use scraped dataset
-    newsgroup_dataset = load_dataset('newsgroup', '18828_alt.atheism')
-    atheism_texts = newsgroup_dataset['train']['text']
+    dailymail = load_dataset('cnn_dailymail', '2.0.0') # https://huggingface.co/datasets/cnn_dailymail/viewer/2.0.0/
+    texts = dailymail['train']['article'][:2000]
 
     # process corpus 
-    tokens = p_map(get_tokens, atheism_texts)
+    tokens = p_map(get_tokens, texts)
 
     # run Mallet LDA model on relational pairs and perform coherence optimization
     id2word = corpora.Dictionary(tokens)
