@@ -35,11 +35,11 @@ def main():
     n_top_docs = args.n_top_docs
 
     # read text data
-    # df = pd.read_csv(path)
-    # df['text'] = df['text'].astype('string')
-    # texts = list(df['text'])
-    dailymail = load_dataset('cnn_dailymail', '2.0.0') # https://huggingface.co/datasets/cnn_dailymail/viewer/2.0.0/
-    texts = dailymail['train']['article'][:200]
+    df = pd.read_csv(path)
+    df['text'] = df['text'].astype('string')
+    texts = list(df['text'])
+    # dailymail = load_dataset('cnn_dailymail', '2.0.0') # https://huggingface.co/datasets/cnn_dailymail/viewer/2.0.0/
+    # texts = dailymail['train']['article'][:200]
 
     # get grammatical relations pairs 
     doc_reln_pairs = naive_malt.get_dependency_trees(texts)

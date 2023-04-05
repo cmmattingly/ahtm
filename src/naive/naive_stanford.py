@@ -6,9 +6,6 @@ import pandas as pd
 import numpy as np
 
 from tqdm import tqdm
-from p_tqdm import p_map # multiprocessing tqdm
-from multiprocessing import Pool
-
 import matplotlib.pyplot as plt
 from graphviz import Source # graphing dependency tree
 
@@ -131,27 +128,3 @@ def get_doc_top_matrix(model: any, n_topics: int) -> list[any]:
     doc_top_matrix = [sorted(arr) for arr in new_doc_top_matrix]
     
     return doc_top_matrix
-
-# [NOTE]: No longer needed
-def main():
-    # load dataset
-    # [TODO]: use scraped dataset
-    dailymail = load_dataset('cnn_dailymail', '2.0.0') # https://huggingface.co/datasets/cnn_dailymail/viewer/2.0.0/
-    texts = dailymail['train']['article'][:2000]
-
-    # process corpus 
-    tokens = p_map(get_tokens, texts)
-
-    # run Mallet LDA model on relational pairs and perform coherence optimization
-    id2word = corpora.Dictionary(tokens)
-    corpus = list(map(lambda x: id2word.doc2bow(x), tokens))
-    model_list, coherence_values = coherence_optimization(tokens, id2word, corpus, range(5, 31, 5))
-
-    # use highest coherence value for main model
-    model = model_list[np.argmax(coherence_values)]
-
-    # get document topic matrix
-    doc_top_matrix = get_doc_top_matrix(model, 5)
-
-    with open('model/naive_model.pkl', 'wb') as f:
-        pickle.dump(model, f)
