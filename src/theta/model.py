@@ -62,13 +62,18 @@ class ThetaRoleModel:
                 z = np.random.randint(self.K) # random topic
                 y = np.random.randint(self.T) # random theta role
 
+                # obtain relns for related word in current document
                 relns = self.doc_relns[d][i]
                 if not relns:
                     continue
                 
+                # initalize counts
+                self.n_d_k[d, z] += 1
+                self.n_k_w[z, word_id] += 1
+                self.n_k[z] += 1
+
                 for reln in relns:
                     self.n_t_reln[y, self.reln2id[reln]] += 1
-
                 self.n_d_t[d, y] += 1
                 self.n_t_k[y, z] += 1
                 self.n_t[y] += 1
@@ -76,11 +81,6 @@ class ThetaRoleModel:
                 word = Word(content=self.id2word[word_id], idx=word_id, z=z, y=y, relns=relns)
                 doc_hat.append(word)
 
-                # initalize counts
-                self.n_d_k[d, z] += 1
-                self.n_k_w[z, word_id] += 1
-                self.n_k[z] += 1
-            
             self.corpus_hat.append(doc_hat)
 
     def fit(self):
@@ -94,11 +94,10 @@ class ThetaRoleModel:
                 for word in doc:
                     z, y, idx, relns = word.z, word.y, word.idx, word.relns
                 
-                    # update counts
+                    # subtract count for current topic and theta role
                     self.n_d_k[d, z] -= 1
                     self.n_k_w[z, idx] -= 1
                     self.n_k[z] -= 1
-
                     for reln in relns:
                         self.n_t_reln[y, self.reln2id[reln]] -= 1
                     self.n_d_t[d, y] -= 1
@@ -117,11 +116,13 @@ class ThetaRoleModel:
                     z = np.random.choice(self.K, p=p_k / sum(p_k))
                     word.z = z
 
-                    # update counts
+                    # update counts for selected topic
                     self.n_d_k[d, z] += 1
                     self.n_k_w[z, idx] += 1
                     self.n_k[z] += 1
 
+                    # probability of current topic given current grammatical relations
+                    # p(t | reln) = p(t | d) * p(reln | t) * p(z | d,t)
                     p_t_reln = np.zeros((self.T, self.R))
                     for reln in relns:
                         for t in range(self.T):
@@ -136,12 +137,12 @@ class ThetaRoleModel:
             
                             p_t_reln[t, self.reln2id[reln]] = p_t_d * p_reln_t * p_z_d_t
                     
-                    # select theta role for each relations
+                    # select theta role for each relation using probability distribution
                     p_t = np.sum(p_t_reln, axis=1)
                     y = np.random.choice(self.T, p=p_t / np.sum(p_t))
                     word.y = y
 
-                    # update counts
+                    # update counts for selected theta role
                     for reln in relns:
                         self.n_t_reln[y, self.reln2id[reln]] += 1
                     self.n_d_t[d, y] += 1

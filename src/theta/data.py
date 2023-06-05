@@ -30,7 +30,7 @@ def process_dataset(docs, stop_words, malt_parser_version='maltparser-1.7.2', mo
     # define valid word
     valid_word = lambda word: not word in stop_words and word.isalpha() and len(word) > 2
 
-    # initalize dictionaries for json output
+    # initalize dictionary for json output
     docs_dict = {
         'documents': dict((doc_idx, {'words': [], 'relns': []}) for doc_idx in doc_idxs),
         'vocab': [], 
@@ -93,7 +93,7 @@ def process_dataset(docs, stop_words, malt_parser_version='maltparser-1.7.2', mo
 
 def main():
     # [UNCOMMENT] uncomment these lines to use own dataset, 2 lines after used for testing
-    # data = pd.read_csv("data/utils/text_data.csv")
+    # data = pd.read_csv("data/raw/text_data.csv")
     # corpus = data['text']
     dailymail = load_dataset('cnn_dailymail', '2.0.0') # https://huggingface.co/datasets/cnn_dailymail/viewer/2.0.0/
     corpus = dailymail['train']['article'][:200]

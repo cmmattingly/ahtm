@@ -3,8 +3,9 @@
 A new approach for leveraging hierarchical topic modeling techniques to analyze and compare dominant frames found during major current events. The latent theta role model is a computational approach to framing analysis that develops latent variables in the form of distribution over words and distributions over grammatical relations to help understand the link between words and grammatical relations.
 
 ## Before Running
+Preprocess corpus:
 ```bash
-
+python src/theta/data.py
 ```
 ## Running
 ```bash
