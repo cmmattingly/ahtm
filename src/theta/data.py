@@ -36,6 +36,7 @@ def process_dataset(docs, stop_words, malt_parser_version='maltparser-1.7.2', mo
         'vocab': [], 
         'vocab_relns': [],
     }
+    # initalize vocab variables as sets (no duplicates)
     vocab = set()
     vocab_relns = set()
 
@@ -43,11 +44,12 @@ def process_dataset(docs, stop_words, malt_parser_version='maltparser-1.7.2', mo
     # loop through list iterators
     for list_it in parser:
         tree = next(list_it)
+        # check if valid tree, if not skip
         try:
             nodes = tree.nodes
         except:
             continue
-
+        
         word_relns_hash = defaultdict(list)
         for word_idx in nodes:
             if word_idx == 0: # skip first
@@ -55,18 +57,24 @@ def process_dataset(docs, stop_words, malt_parser_version='maltparser-1.7.2', mo
             
             deps = nodes[word_idx]['deps']
 
+            # check for valid dependency relations
             if deps:
                 for reln, idxs in deps.items():
                     for idx in idxs:
                         dep_reln, gov_reln = f"{reln}.dep", f"{reln}.gov"
+                        # add relations to vocab
                         vocab_relns.add(dep_reln)
                         vocab_relns.add(gov_reln)
 
+                        # add reln to word in hashmap
                         word_relns_hash[idx].append(dep_reln) # append to dep word
                         word_relns_hash[word_idx].append(gov_reln) # append to current word
         
+        # check for valid hashmap
         if word_relns_hash:
             doc_idx = doc_idxs[i]
+
+            # loop through hashmap items and append to dict for future storing
             for word_idx, relns in word_relns_hash.items():
                 word = nodes[word_idx]['word']
                 relns = [reln for reln in relns if reln != "punct.gov"]
@@ -84,21 +92,24 @@ def process_dataset(docs, stop_words, malt_parser_version='maltparser-1.7.2', mo
 
 
 def main():
+    # [UNCOMMENT] uncomment these lines to use own dataset, 2 lines after used for testing
     # data = pd.read_csv("data/utils/text_data.csv")
     # corpus = data['text']
     dailymail = load_dataset('cnn_dailymail', '2.0.0') # https://huggingface.co/datasets/cnn_dailymail/viewer/2.0.0/
     corpus = dailymail['train']['article'][:200]
 
-    # stop words
+    # stop word initialization
     with open("data/utils/stopwords.txt") as f:
         more_stop_words = f.read().splitlines()
-
     stop_words = nltk.corpus.stopwords.words('english')
     stop_words.extend(more_stop_words)
     
+    # obtain word relation pairs
     docs_dict = process_dataset(corpus, stop_words)
+    # convert to json object
     json_object = json.dumps(docs_dict, indent=4)
 
+    # store json object
     with open("data/processed/corpus.json", "w") as f:
         f.write(json_object)
 
