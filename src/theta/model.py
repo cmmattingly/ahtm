@@ -189,14 +189,20 @@ class ThetaRoleModel:
 
     def print_topics(self):
         '''
-        Print topics
+        Print topics and the assigned theta role 
         '''
+        n_k_t = self.n_t_k.T
         for k in range(self.K):
+            # select theta role for given topic
+            prob_distribution = n_k_t[k] / sum(n_k_t[k])
+            y = np.random.choice(self.T, p=prob_distribution)
+
+            # obtain top words for each topic
             word_ids = np.argsort(self.beta[k])[::-1][:10]
             probs = np.sort(self.beta[k])[::-1][:10]
             top_words = [self.id2word[i] for i in word_ids]
             strings = [f'{prob} * {word}' for prob, word in zip(probs, top_words)]
-            print(f"Topic {str(k)}: {', '.join(strings)} \n") 
+            print(f"Topic {str(k)} (Theta Role: {str(y)}): {', '.join(strings)} \n") 
 
     def print_theta_roles(self):
         '''

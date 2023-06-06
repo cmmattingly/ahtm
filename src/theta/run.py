@@ -60,6 +60,5 @@ def main():
     # print topics, theta roles, and top topics/theta roles for each document
     theta_model.print_all()
 
-
 if __name__ == "__main__":
     main()
