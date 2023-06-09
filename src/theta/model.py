@@ -3,12 +3,13 @@ from tqdm import tqdm
 from word import Word
 
 class ThetaRoleModel:
-    def __init__(self, corpus, doc_relns, vocab_relns, id2word, reln2id, n_iters, K, T, D, V, R, alpha, eta, gamma, lam):
-        self.corpus = corpus
-        self.doc_relns = doc_relns
-        self.vocab_relns = vocab_relns
-        self.id2word = id2word
-        self.reln2id = reln2id
+    def __init__(self, corpus, cfs, doc_relns, corpus_relns, id2word, reln2id, n_iters, K, T, D, V, R, alpha, eta, gamma, lam):
+        self.corpus = corpus # corpus of word ids
+        self.cfs = cfs # count frequencies for words
+        self.doc_relns = doc_relns # relns in documents
+        self.corpus_relns = corpus_relns # relns in form of vocab
+        self.id2word = id2word # convert word id to word
+        self.reln2id = reln2id # convert reln to id
         self.corpus_hat = None # corpus in the form of Word objects
        
         self.n_iters = n_iters
@@ -155,8 +156,8 @@ class ThetaRoleModel:
         '''
         self.theta = np.zeros((self.D, self.K))
         for d in range(self.D):
-            _N = len(self.corpus[d])
-            self.theta[d] = (self.n_d_k[d] + self.alpha) / (_N + self.K * self.alpha)
+            N = len(self.corpus[d])
+            self.theta[d] = (self.n_d_k[d] + self.alpha) / (N + self.K * self.alpha)
         return self.theta
 
     def compute_phi(self):
@@ -165,8 +166,8 @@ class ThetaRoleModel:
         '''
         self.phi = np.zeros((self.D, self.T))
         for d in range(self.D):
-            _N = len(self.corpus[d])
-            self.phi[d] = (self.n_d_t[d] + self.gamma) / (_N + self.T * self.gamma) 
+            N = len(self.corpus[d])
+            self.phi[d] = (self.n_d_t[d] + self.gamma) / (N + self.T * self.gamma) 
         return self.phi
 
     def compute_beta(self):
@@ -186,6 +187,17 @@ class ThetaRoleModel:
         for t in range(self.T):
             self.zeta[t] = (self.n_t_reln[t] + self.lam) / (self.n_t[t] + self.R * self.lam) 
         return self.zeta
+
+    # p(reln|w) = p(reln|y)p(y|z)p(z|w)
+    def compute_reln_w(self, k, t, reln, w,):
+        p_reln_y = (self.n_t_reln[t, self.reln2id[reln]] + self.lam) \
+            / (self.n_t[t] + self.lam * self.R)
+        p_y_z = (self.n_t_k.T[k, t] + self.gamma) \
+            / (self.n_k[k] + self.gamma * self.K)
+        p_z_w = (self.n_k_w.T[w, k] + self.eta) / (self.cfs(w) + self.eta * self.V)
+        p_reln_w = p_reln_y * p_y_z * p_z_w
+
+        return p_reln_w
 
     def print_topics(self):
         '''
@@ -211,7 +223,7 @@ class ThetaRoleModel:
         for t in range(self.T):
             reln_ids = np.argsort(self.zeta[t])[::-1][:10]
             probs = np.sort(self.zeta[t])[::-1][:10]
-            top_relns = [self.vocab_relns[i] for i in reln_ids]
+            top_relns = [self.corpus_relns[i] for i in reln_ids]
             strings = [f'{prob} * {reln}' for prob, reln in zip(probs, top_relns)]
             print(f"Theta Role {str(t)}: {', '.join(strings)}\n")
 
